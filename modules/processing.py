@@ -819,6 +819,13 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    print('-------------------------------------------')
+    print(f'| {p}')
+    print('-------------------------------------------')
+    for attr, value in p.__dict__.items():
+        print(f"- {attr}: {value}")
+    print('-------------------------------------------')
+    
     if p.scripts is not None:
         p.scripts.before_process(p)
 
@@ -860,6 +867,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
+    
+    print("**************************")
+    print("IN PROCESS_IMAGES_INNER")
+    print("**************************")
 
     if isinstance(p.prompt, list):
         assert(len(p.prompt) > 0)
@@ -1583,6 +1594,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
 
         image_mask = self.image_mask
+        
+        print("**************************")
+        print("SAVING ORIG IMAGE MASK")
+        print("**************************")
+        image_mask.save("imgs/mask_before_replace.png")
+        
+        replace_mask = cv2.imread("imgs/final_mask.png")
 
         if image_mask is not None:
             # image_mask is passed in as RGBA by Gradio to support alpha masks,
@@ -1609,9 +1627,23 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.extra_generation_params["Mask blur"] = self.mask_blur
 
             if self.inpaint_full_res:
-                self.mask_for_overlay = image_mask
+                
                 mask = image_mask.convert('L')
                 crop_region = masking.get_crop_region_v2(mask, self.inpaint_full_res_padding)
+                
+                print("**************************")
+                print("BUILD NEW IMG MASK")
+                print("**************************")
+                region_width = crop_region[2] - crop_region[0]
+                region_height = crop_region[3] - crop_region[1]
+                replacement_resized = cv2.cvtColor(cv2.resize(replace_mask, (region_width, region_height), interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY)
+                img_mask_np = np.array(image_mask)
+                img_mask_np[crop_region[1]:crop_region[3], crop_region[0]:crop_region[2]] = replacement_resized
+                image_mask = Image.fromarray(img_mask_np)
+                image_mask.save("imgs/full_mask.png")
+                
+                self.mask_for_overlay = image_mask
+                
                 if crop_region:
                     crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                     x1, y1, x2, y2 = crop_region
@@ -1636,7 +1668,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             self.overlay_images = []
 
+        # replace image_mask here??
+        print("**************************")
+        print("REPLACING IMAGE MASK")
+        print("**************************")
+        image_mask = Image.open("imgs/final_mask.png")
+        
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
+        
+        print("**************************")
+        print("SAVING LATENT MASK")
+        print("**************************")
+        latent_mask.save("imgs/latent_mask.png")
 
         add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
@@ -1655,6 +1698,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
+                    
                 if self.mask_for_overlay.size != (image.width, image.height):
                     self.mask_for_overlay = images.resize_image(self.resize_mode, self.mask_for_overlay, image.width, image.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -1716,6 +1760,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.mask_round:
                 latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
+            
+            print("**************************")
+            print("SAVING LAT MASK 2")
+            print("**************************")
+            image_mask.save("imgs/lat_mask_2.png")
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
@@ -1728,10 +1777,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
                 self.extra_generation_params["Masked content"] = 'latent nothing'
+                
+            print("**************************")
+            print("SAVING IMAGE MASK 2")
+            print("**************************")
+            image_mask.save("imgs/image_mask_2.png")
 
         self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.mask_round)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+        print("**************************")
+        print("IN SAMPLE")
+        print("**************************")
         x = self.rng.next()
 
         if self.initial_noise_multiplier != 1.0:
