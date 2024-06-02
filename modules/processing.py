@@ -819,12 +819,12 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
-    print('-------------------------------------------')
-    print(f'| {p}')
-    print('-------------------------------------------')
-    for attr, value in p.__dict__.items():
-        print(f"- {attr}: {value}")
-    print('-------------------------------------------')
+    # print('-------------------------------------------')
+    # print(f'| {p}')
+    # print('-------------------------------------------')
+    # for attr, value in p.__dict__.items():
+    #     print(f"- {attr}: {value}")
+    # print('-------------------------------------------')
     
     if p.scripts is not None:
         p.scripts.before_process(p)
@@ -1629,7 +1629,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 
                 mask = image_mask.convert('L')
-                crop_region = masking.get_crop_region_v2(mask, self.inpaint_full_res_padding)
+                crop_region = masking.expand_crop_region(masking.get_crop_region_v2(mask, self.inpaint_full_res_padding), self.width, self.height, mask.width, mask.height)
                 
                 print("**************************")
                 print("BUILD NEW IMG MASK")
@@ -1676,10 +1676,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
         
-        print("**************************")
-        print("SAVING LATENT MASK")
-        print("**************************")
-        latent_mask.save("imgs/latent_mask.png")
+        # print("**************************")
+        # print("SAVING LATENT MASK")
+        # print("**************************")
+        # latent_mask.save("imgs/latent_mask.png")
 
         add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
@@ -1761,10 +1761,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
             
-            print("**************************")
-            print("SAVING LAT MASK 2")
-            print("**************************")
-            image_mask.save("imgs/lat_mask_2.png")
+            # print("**************************")
+            # print("SAVING LAT MASK 2")
+            # print("**************************")
+            # image_mask.save("imgs/lat_mask_2.png")
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
@@ -1778,10 +1778,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.init_latent = self.init_latent * self.mask
                 self.extra_generation_params["Masked content"] = 'latent nothing'
                 
-            print("**************************")
-            print("SAVING IMAGE MASK 2")
-            print("**************************")
-            image_mask.save("imgs/image_mask_2.png")
+            # print("**************************")
+            # print("SAVING IMAGE MASK 2")
+            # print("**************************")
+            # image_mask.save("imgs/image_mask_2.png")
 
         self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.mask_round)
 

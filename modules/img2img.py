@@ -185,6 +185,11 @@ def img2img(id_task: str, request: gr.Request, mode: int, prompt: str, negative_
         height = int(image.height * scale_by)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
+    
+    # print("**************************")
+    # print("SENDING MASK TO PROCESSING")
+    # print("**************************")
+    # mask.save("imgs/orig_mask.png")
 
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
