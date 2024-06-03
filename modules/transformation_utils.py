@@ -216,7 +216,7 @@ def shrink_mask(mask, n):
     
     return shrunk_mask
 
-def create_new_contour(transformed_contour, transformed_mask, original_contour, original_mask, n=15):
+def create_new_contour(transformed_contour, transformed_mask, original_contour, original_mask, n=2):
     shrunk_rescaled_mask = shrink_mask(transformed_mask, n)
     shrunk_orig_mask = shrink_mask(original_mask, n)
     new_contour_img = (1 - shrunk_orig_mask) * original_contour + shrunk_rescaled_mask * transformed_contour
