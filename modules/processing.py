@@ -1557,6 +1557,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     initial_noise_multiplier: float = None
     latent_mask: Image = None
     force_task_id: str = None
+    
+    load_contour: bool = False
+    init_img_path: str = None
+    transformation_params_path: str = None
 
     image_mask: Any = field(default=None, init=False)
 

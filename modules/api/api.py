@@ -486,6 +486,10 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        print("***************************")
+        print("IN IMG2IMG API")
+        print("***************************")
+        
         task_id = img2imgreq.force_task_id or create_task_id("img2img")
 
         init_images = img2imgreq.init_images
