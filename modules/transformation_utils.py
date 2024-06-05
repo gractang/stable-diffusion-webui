@@ -222,11 +222,13 @@ def create_new_contour(transformed_contour, transformed_mask, original_contour, 
     new_contour_img = (1 - shrunk_orig_mask) * original_contour + shrunk_rescaled_mask * transformed_contour
     return new_contour_img
 
-def read_params(filepath):
+def read_params(filepath, debug=False):
     """
     Reads a json file with the relevant params and returns
     scale_factor_x, scale_factor_y, angle, translate_x, translate_y
     """
+    if debug:
+        return 1, 1, 0, 0, 0
     params = json.load(open(filepath))
     scale_factor_x = params["scale_factor_x"]
     scale_factor_y = params["scale_factor_y"]
