@@ -29,6 +29,10 @@ def rescale_img(img, contours, scale_factor_x, scale_factor_y):
 
     # Get the bounding box of the object
     x, y, w, h = cv2.boundingRect(contours[0])
+    
+    # # plot and save bounding box on image
+    # cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), 2)
+    # cv2.imwrite("imgs/bounding_box.png", img)
 
     # Crop the object from the contour and mask images
     roi = img[y:y+h, x:x+w]
@@ -42,19 +46,19 @@ def rescale_img(img, contours, scale_factor_x, scale_factor_y):
     new_image = np.zeros_like(img)
     
     # Compute the position to place the rescaled object in the center
-    center_x = (new_image.shape[1] - new_w) // 2
-    center_y = (new_image.shape[0] - new_h) // 2
+    start_x = x + (w - new_w) // 2
+    start_y = y + (h - new_h) // 2
     
     # Handle cases where the rescaled object exceeds the original image boundaries
-    start_x = max(center_x, 0)
-    start_y = max(center_y, 0)
-    end_x = min(center_x + new_w, new_image.shape[1])
-    end_y = min(center_y + new_h, new_image.shape[0])
+    start_x = max(start_x, 0)
+    start_y = max(start_y, 0)
+    end_x = min(start_x + new_w, new_image.shape[1])
+    end_y = min(start_y + new_h, new_image.shape[0])
     
-    # Calculate the regions of interest for placing
+    # Calculate the region of interest for placing
     roi_img = rescaled_img[:end_y-start_y, :end_x-start_x]
     
-    # Place the rescaled object back in the new images
+    # Place the rescaled object back in the new image
     new_image[start_y:end_y, start_x:end_x] = roi_img
 
     return new_image
@@ -194,6 +198,7 @@ def transform_contour_and_mask(contour_image, mask_image, scale_factor_x, scale_
     rescaled_contour, rescaled_mask = rescale_contour_and_mask(contour_image, mask_image, scale_factor_x, scale_factor_y)
     rotated_contour, rotated_mask = rotate_contour_and_mask(rescaled_contour, rescaled_mask, angle)
     translated_contour, translated_mask = translate_contour_and_mask(rotated_contour, rotated_mask, translate_x, translate_y)
+    # translated_contour, translated_mask = rotated_contour, rotated_mask # for debugging
     return translated_contour, translated_mask
 
 def shrink_mask(mask, n):
@@ -242,6 +247,7 @@ def get_final_contour_and_mask(contour_image, mask_image, filepath):
     Gets the final contour and mask after applying the transformation
     """
     scale_factor_x, scale_factor_y, angle, translate_x, translate_y = read_params(filepath)
+    print("Params:", scale_factor_x, scale_factor_y, angle, translate_x, translate_y)
     transformed_contour, transformed_mask = transform_contour_and_mask(contour_image, mask_image, scale_factor_x, scale_factor_y, angle, translate_x, translate_y)
     final_contour = create_new_contour(transformed_contour, transformed_mask, contour_image, mask_image)
     return final_contour, add_masks(mask_image, transformed_mask)
