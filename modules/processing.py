@@ -6,6 +6,7 @@ import os
 import sys
 import hashlib
 from dataclasses import dataclass, field
+import time
 
 import torch
 import numpy as np
@@ -1561,6 +1562,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     load_contour: bool = False
     init_img_path: str = None
     transformation_params_path: str = None
+    use_transformation: bool = False
 
     image_mask: Any = field(default=None, init=False)
 
@@ -1599,14 +1601,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         image_mask = self.image_mask
         
-        print("**************************")
-        print("SAVING ORIG IMAGE MASK")
-        print("**************************")
-        image_mask.save("imgs/mask_before_replace.png")
-        
-        replace_mask = cv2.imread("imgs/final_mask.png")
-
         if image_mask is not None:
+            print("**************************")
+            print("SAVING ORIG IMAGE MASK")
+            print("**************************")
+            image_mask.save("imgs/mask_before_replace.png")
+            
+            # replace if load contour is enabled
+            if self.use_transformation: 
+                replace_mask = cv2.imread("imgs/final_mask.png")
+            else:
+                replace_mask = None
+        
             # image_mask is passed in as RGBA by Gradio to support alpha masks,
             # but we still want to support binary masks.
             image_mask = create_binary_mask(image_mask, round=self.mask_round)
@@ -1635,16 +1641,16 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 mask = image_mask.convert('L')
                 crop_region = masking.expand_crop_region(masking.get_crop_region_v2(mask, self.inpaint_full_res_padding), self.width, self.height, mask.width, mask.height)
                 
-                print("**************************")
-                print("BUILD NEW IMG MASK")
-                print("**************************")
-                region_width = crop_region[2] - crop_region[0]
-                region_height = crop_region[3] - crop_region[1]
-                replacement_resized = cv2.cvtColor(cv2.resize(replace_mask, (region_width, region_height), interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY)
-                img_mask_np = np.array(image_mask)
-                img_mask_np[crop_region[1]:crop_region[3], crop_region[0]:crop_region[2]] = replacement_resized
-                image_mask = Image.fromarray(img_mask_np)
-                image_mask.save("imgs/full_mask.png")
+                if self.use_transformation:
+                    print("**************************")
+                    print("BUILD NEW IMG MASK")
+                    print("**************************")
+                    region_width = crop_region[2] - crop_region[0]
+                    region_height = crop_region[3] - crop_region[1]
+                    replacement_resized = cv2.cvtColor(cv2.resize(replace_mask, (region_width, region_height), interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY)
+                    img_mask_np = np.array(image_mask)
+                    img_mask_np[crop_region[1]:crop_region[3], crop_region[0]:crop_region[2]] = replacement_resized
+                    image_mask = Image.fromarray(img_mask_np)
                 
                 self.mask_for_overlay = image_mask
                 
@@ -1673,10 +1679,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.overlay_images = []
 
         # replace image_mask here??
-        print("**************************")
-        print("REPLACING IMAGE MASK")
-        print("**************************")
-        image_mask = Image.open("imgs/final_mask.png")
+        if image_mask and self.use_transformation:
+            print("**************************")
+            print("REPLACING IMAGE MASK")
+            print("**************************")
+            image_mask = Image.open("imgs/final_mask.png")
         
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
         
@@ -1702,7 +1709,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
-                    
                 if self.mask_for_overlay.size != (image.width, image.height):
                     self.mask_for_overlay = images.resize_image(self.resize_mode, self.mask_for_overlay, image.width, image.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
