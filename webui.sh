@@ -6,7 +6,6 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
     if [[ -f "$SCRIPT_DIR"/webui-macos-env.sh ]]
@@ -113,7 +112,7 @@ then
     exit 1
 fi
 
-if [[ -d "$SCRIPT_DIR/.git" ]]
+if [[ -e "$SCRIPT_DIR/.git" ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Repo already cloned, using it as install directory"
