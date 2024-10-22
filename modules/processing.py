@@ -1605,6 +1605,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             print("**************************")
             print("SAVING ORIG IMAGE MASK")
             print("**************************")
+            os.makedirs("imgs", exist_ok=True)
             image_mask.save("imgs/mask_before_replace.png")
             
             # replace if load contour is enabled
