@@ -38,4 +38,4 @@ notification.mp3
 /.coverage*
 /test/test_outputs
 /cache
-/imgs
+*.png
