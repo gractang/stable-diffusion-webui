@@ -819,9 +819,6 @@ class ScriptRunner:
                 errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
-        # print("**************************")
-        # print("PROCESSING SCRIPT")
-        # print("**************************")
         for script in self.ordered_scripts('process'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
